@@ -22,7 +22,7 @@ if(!require(ggiraph)) install.packages("ggiraph", repos = "http://cran.us.r-proj
 if(!require(RColorBrewer)) install.packages("RColorBrewer", repos = "http://cran.us.r-project.org")
 if(!require(leaflet)) install.packages("leaflet", repos = "http://cran.us.r-project.org")
 if(!require(plotly)) install.packages("plotly", repos = "http://cran.us.r-project.org")
-# if(!require(geojsonio)) install.packages("geojsonio", repos = "http://cran.us.r-project.org")
+if(!require(geojsonio)) install.packages("geojsonio", repos = "http://cran.us.r-project.org")
 if(!require(shiny)) install.packages("shiny", repos = "http://cran.us.r-project.org")
 if(!require(shinyWidgets)) install.packages("shinyWidgets", repos = "http://cran.us.r-project.org")
 if(!require(shinydashboard)) install.packages("shinydashboard", repos = "http://cran.us.r-project.org")
@@ -41,7 +41,7 @@ sars_cases = read.csv("input_data/sars.csv")
 countries = read.csv("input_data/countries_codes_and_coordinates.csv")
 ebola_cases = read.csv("input_data/ebola.csv")
 h1n1_cases = read.csv("input_data/h1n1.csv")
-# worldcountry = geojson_read("input_data/50m.geojson", what = "sp")
+worldcountry = geojson_read("input_data/50m.geojson", what = "sp")
 country_geoms = read.csv("input_data/country_geoms.csv")
 cv_states = read.csv("input_data/coronavirus_states.csv")
 
@@ -317,14 +317,14 @@ cv_cases_global$newdeathsper100k =  as.numeric(format(round(cv_cases_global$new_
 write.csv(cv_cases_global, "input_data/coronavirus_global.csv")
 
 # select large countries for mapping polygons
-# cv_large_countries = cv_today %>% filter(alpha3 %in% worldcountry$ADM0_A3)
-# if (all(cv_large_countries$alpha3 %in% worldcountry$ADM0_A3)==FALSE) { print("Error: inconsistent country names")}
-# cv_large_countries = cv_large_countries[order(cv_large_countries$alpha3),]
+cv_large_countries = cv_today %>% filter(alpha3 %in% worldcountry$ADM0_A3)
+if (all(cv_large_countries$alpha3 %in% worldcountry$ADM0_A3)==FALSE) { print("Error: inconsistent country names")}
+cv_large_countries = cv_large_countries[order(cv_large_countries$alpha3),]
 
 # create plotting parameters for map
-# bins = c(0,1,5,10,50,100,Inf)
-# cv_pal <- colorBin("Oranges", domain = cv_large_countries$per100k, bins = bins)
-# plot_map <- worldcountry[worldcountry$ADM0_A3 %in% cv_large_countries$alpha3, ]
+bins = c(0,1,5,10,50,100,Inf)
+cv_pal <- colorBin("Oranges", domain = cv_large_countries$per100k, bins = bins)
+plot_map <- worldcountry[worldcountry$ADM0_A3 %in% cv_large_countries$alpha3, ]
 
 # creat cv base map 
 basemap = leaflet(plot_map) %>% 
@@ -388,49 +388,49 @@ sars_large_countries = sars_large_countries[order(sars_large_countries$alpha3),]
 sars_pal <- colorBin("Blues", domain = sars_large_countries$per100k, bins = bins)
 
 # # creat sars interactive map (needs to include polygons and circles as slider input not recognised upon initial loading)
-# sars_basemap = leaflet(sars_plot_map) %>% 
-#   addTiles() %>% 
-#   addLayersControl(
-#     position = "bottomright",
-#     overlayGroups = c("2003-SARS (cumulative)", "2019-COVID", "2009-H1N1 (swine flu)", "2014-Ebola"),
-#     options = layersControlOptions(collapsed = FALSE)) %>% 
-#   hideGroup(c("2019-COVID", "2009-H1N1 (swine flu)", "2014-Ebola"))  %>%
-#   addProviderTiles(providers$CartoDB.Positron) %>%
-#   fitBounds(~-100,-50,~80,80) %>%
-#   
-#   addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 0.4, fillColor = ~sars_pal(sars_large_countries$per100k), group = "2003-SARS (cumulative)",
-#               label = sprintf("<strong>%s</strong><br/>SARS cases: %g<br/>Deaths: %d<br/>Cases per 100,000: %g", sars_large_countries$country, sars_large_countries$cases, sars_large_countries$deaths, sars_large_countries$per100k) %>% lapply(htmltools::HTML),
-#               labelOptions = labelOptions(
-#                 style = list("font-weight" = "normal", padding = "3px 8px", "color" = sars_col),
-#                 textsize = "15px", direction = "auto")) %>%
-#   
-#   addCircleMarkers(data = sars_final, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(cases)^(1/4), 
-#              fillOpacity = 0.2, color = sars_col, group = "2003-SARS (cumulative)",
-#              label = sprintf("<strong>%s</strong><br/>SARS cases: %g<br/>Deaths: %d<br/>Cases per 100,000: %g", sars_final$country, sars_final$cases, sars_final$deaths, sars_final$per100k) %>% lapply(htmltools::HTML),
-#              labelOptions = labelOptions(
-#                style = list("font-weight" = "normal", padding = "3px 8px", "color" = sars_col),
-#                textsize = "15px", direction = "auto")) %>%
-#   
-#   addCircleMarkers(data = cv_today, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(cases)^(1/5),
-#              fillOpacity = 0.2, color = covid_col, group = "2019-COVID",
-#              label = sprintf("<strong>%s (cumulative)</strong><br/>Confirmed cases: %g<br/>Deaths: %d<br/>Recovered: %d<br/>Cases per 100,000: %g", cv_today$country, cv_today$cases, cv_today$deaths, cv_today$recovered, cv_today$per100k) %>% lapply(htmltools::HTML),
-#              labelOptions = labelOptions(
-#                style = list("font-weight" = "normal", padding = "3px 8px", "color" = covid_col),
-#                textsize = "15px", direction = "auto"))  %>%
-#   
-#   addCircleMarkers(data = h1n1_cases, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(projected_deaths)^(1/4),
-#              fillOpacity = 0.2, color = h1n1_col, group = "2009-H1N1 (swine flu)",
-#              label = sprintf("<strong>%s</strong><br/>H1N1 deaths (confirmed): %g<br/>H1N1 deaths (estimated): %g", h1n1_cases$region, h1n1_cases$deaths, h1n1_cases$projected_deaths) %>% lapply(htmltools::HTML),
-#              labelOptions = labelOptions(
-#                style = list("font-weight" = "normal", padding = "3px 8px", "color" = h1n1_col),
-#                textsize = "15px", direction = "auto")) %>%
-#   
-#   addCircleMarkers(data = ebola_cases, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(cases)^(1/4),
-#              fillOpacity = 0.2, color = ebola_col, group = "2014-Ebola",
-#              label = sprintf("<strong>%s</strong><br/>Ebola cases: %g<br/>Deaths: %d", ebola_cases$country, ebola_cases$cases, ebola_cases$deaths) %>% lapply(htmltools::HTML),
-#              labelOptions = labelOptions(
-#                style = list("font-weight" = "normal", padding = "3px 8px", "color" = ebola_col),
-#                textsize = "15px", direction = "auto")) 
+sars_basemap = leaflet(sars_plot_map) %>%
+  addTiles() %>%
+  addLayersControl(
+    position = "bottomright",
+    overlayGroups = c("2003-SARS (cumulative)", "2019-COVID", "2009-H1N1 (swine flu)", "2014-Ebola"),
+    options = layersControlOptions(collapsed = FALSE)) %>%
+  hideGroup(c("2019-COVID", "2009-H1N1 (swine flu)", "2014-Ebola"))  %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  fitBounds(~-100,-50,~80,80) %>%
+
+  addPolygons(stroke = FALSE, smoothFactor = 0.2, fillOpacity = 0.4, fillColor = ~sars_pal(sars_large_countries$per100k), group = "2003-SARS (cumulative)",
+              label = sprintf("<strong>%s</strong><br/>SARS cases: %g<br/>Deaths: %d<br/>Cases per 100,000: %g", sars_large_countries$country, sars_large_countries$cases, sars_large_countries$deaths, sars_large_countries$per100k) %>% lapply(htmltools::HTML),
+              labelOptions = labelOptions(
+                style = list("font-weight" = "normal", padding = "3px 8px", "color" = sars_col),
+                textsize = "15px", direction = "auto")) %>%
+
+  addCircleMarkers(data = sars_final, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(cases)^(1/4),
+             fillOpacity = 0.2, color = sars_col, group = "2003-SARS (cumulative)",
+             label = sprintf("<strong>%s</strong><br/>SARS cases: %g<br/>Deaths: %d<br/>Cases per 100,000: %g", sars_final$country, sars_final$cases, sars_final$deaths, sars_final$per100k) %>% lapply(htmltools::HTML),
+             labelOptions = labelOptions(
+               style = list("font-weight" = "normal", padding = "3px 8px", "color" = sars_col),
+               textsize = "15px", direction = "auto")) %>%
+
+  addCircleMarkers(data = cv_today, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(cases)^(1/5),
+             fillOpacity = 0.2, color = covid_col, group = "2019-COVID",
+             label = sprintf("<strong>%s (cumulative)</strong><br/>Confirmed cases: %g<br/>Deaths: %d<br/>Recovered: %d<br/>Cases per 100,000: %g", cv_today$country, cv_today$cases, cv_today$deaths, cv_today$recovered, cv_today$per100k) %>% lapply(htmltools::HTML),
+             labelOptions = labelOptions(
+               style = list("font-weight" = "normal", padding = "3px 8px", "color" = covid_col),
+               textsize = "15px", direction = "auto"))  %>%
+
+  addCircleMarkers(data = h1n1_cases, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(projected_deaths)^(1/4),
+             fillOpacity = 0.2, color = h1n1_col, group = "2009-H1N1 (swine flu)",
+             label = sprintf("<strong>%s</strong><br/>H1N1 deaths (confirmed): %g<br/>H1N1 deaths (estimated): %g", h1n1_cases$region, h1n1_cases$deaths, h1n1_cases$projected_deaths) %>% lapply(htmltools::HTML),
+             labelOptions = labelOptions(
+               style = list("font-weight" = "normal", padding = "3px 8px", "color" = h1n1_col),
+               textsize = "15px", direction = "auto")) %>%
+
+  addCircleMarkers(data = ebola_cases, lat = ~ latitude, lng = ~ longitude, weight = 1, radius = ~(cases)^(1/4),
+             fillOpacity = 0.2, color = ebola_col, group = "2014-Ebola",
+             label = sprintf("<strong>%s</strong><br/>Ebola cases: %g<br/>Deaths: %d", ebola_cases$country, ebola_cases$cases, ebola_cases$deaths) %>% lapply(htmltools::HTML),
+             labelOptions = labelOptions(
+               style = list("font-weight" = "normal", padding = "3px 8px", "color" = ebola_col),
+               textsize = "15px", direction = "auto"))
   
 # sum sars case counts by date
 sars_aggregated = aggregate(sars_cases$cases, by=list(Category=sars_cases$date), FUN=sum)
@@ -464,7 +464,7 @@ epi_comp$cfr = round(epi_comp$cfr,2)
 
 
 
-### SHINY UI ###
+### SHINY UI ### ----
 ui <- bootstrapPage(
   tags$head(includeHTML("gtag.html")),
   navbarPage(theme = shinytheme("flatly"), collapsible = TRUE,
@@ -676,7 +676,7 @@ ui <- bootstrapPage(
 
 
 
-### SHINY SERVER ###
+### SHINY SERVER ### ----
 
 server = function(input, output, session) {
   
